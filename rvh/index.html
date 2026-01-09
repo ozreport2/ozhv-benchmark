@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<!-- This sample page assumes the uncompressed OZ HTML5 Viewer package is accessible and valid at http://127.0.0.1:8080/ozrviewer/. -->
+<head>
+    <title>RV HTML5</title>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no"/>
+
+<!--  Sample codes  -->
+    <style>
+        #wrapper {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 90vh; /* old browser fallback */
+            height: 100dvh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #OZViewer {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="wrapper">
+        <div id="OZViewer"></div>
+    </div>
+    <script type="text/javascript">
+        const ozViewerId = "OZViewer";
+        const ozViewer = document.getElementById(ozViewerId);
+
+        const urlGetParamMap = (() => {
+            if (!location.search || !location.search.startsWith("?")) {
+                return {};
+            }
+            const r = {};
+            const pairs = location.search.slice(1).split("&");
+                pairs.forEach(pair => {
+                    const [key, value] = pair.split("=");
+                    if (key) {
+                        r[key] = value || "";
+                    }
+                });
+            return r;
+        })();
+
+        const ozViewerServer = (() => {
+            const url = urlGetParamMap["svurl"];
+            if (url) {
+                if (url == "origin") {
+                    return location.origin + "/";
+                }
+                if (url.startsWith(location.protocol)) {
+                    return decodeURIComponent(url.endsWith("/") ? url : url + "/");
+                }
+            }
+            return "https://dev-test.oz4cs.com/";
+        })();
+
+        const ozViewerPath = (() => {
+            const url = urlGetParamMap["rvurl"];
+            if (url && url.startsWith(location.protocol)) {
+                return decodeURIComponent(url.endsWith("/") ? url : url + "/")
+            }
+            return ozViewerServer + "oz/HTML5/";
+        })();
+
+        const libUrls = {
+            css: [
+                ozViewerServer + "oz/jquery/jquery-ui.css",
+                ozViewerPath + "ui.dynatree.css",
+            ],
+            js: [
+                ozViewerServer + "oz/jquery/jquery.min.js",
+                ozViewerServer + "oz/jquery/jquery-ui.min.js",
+                ozViewerPath + "jquery.dynatree.js",
+                ozViewerPath + "OZJSViewer.js",
+                ozViewerPath + "pdf_js/web/compatibility.js",
+                ozViewerPath + "pdf_js/build/pdf.js",
+            ],
+        };
+
+        const ozViewerParams = (() => {
+            const p = {
+                "connection.servlet": ozViewerServer + "oz/server",
+                "global.inheritparameter": true,
+                "viewer.progresscommand": true,
+                "export.format": "pdf",
+                "export.mode": "silent",
+                "export.filename": "benchmark.pdf",
+                "information.debug": true,
+            };
+            const testTarget = urlGetParamMap["target"].split("_");
+            switch (testTarget[0]) {
+                case "Dataset": {
+                    p["connection.reportname"] = "user/kimhono97/benchmark/csv.ozr";
+                    switch (parseInt(testTarget[1])) {
+                        case 100:
+                        default:
+                            break;
+                        case 500:
+                            p["connection.pcount"] = 1;
+                            p["connection.args1"] = "dataset=Google_585K";
+                            break;
+                        case 1000:
+                            p["connection.pcount"] = 1;
+                            p["connection.args1"] = "dataset=AMD_955K";
+                            break;
+                    }
+                    break;
+                }
+                case "PDFDoc": {
+                    switch (parseInt(testTarget[1])) {
+                        case 2:
+                            p["connection.reportname"] = "user/kimhono97/benchmark/TS_2M.pdf";
+                        default:
+                            break;
+                        case 3:
+                            p["connection.reportname"] = "user/kimhono97/benchmark/CSS_3M.pdf";
+                            break;
+                        case 6:
+                            p["connection.reportname"] = "user/kimhono97/benchmark/JS_6M.pdf";
+                            break;
+                        case 20:
+                            p["connection.reportname"] = "user/kimhono97/benchmark/PDF_21M.pdf";
+                            break;
+                    }
+                    break;
+                }
+                case "OZD": {
+                    switch (parseInt(testTarget[1])) {
+                        case 1:
+                            p["connection.openfile"] = "ozp://user/kimhono97/benchmark/ASalesReport.ozd";
+                        default:
+                            break;
+                        case 10:
+                            p["connection.openfile"] = "ozp://user/kimhono97/benchmark/Image_14M.ozd";
+                            break;
+                        case 20:
+                            p["connection.openfile"] = "ozp://user/kimhono97/benchmark/Image_24M.ozd";
+                            break;
+                    }
+                    break;
+                }
+                case "MultiDoc": {
+                    const count = parseInt(testTarget[1]) || 2;
+                    p["global.inheritparameter"] = true;
+                    p["export.saveonefile"] = true;
+                    p["viewer.childcount"] = count - 1;
+                    p["connection.reportname"] = "user/kimhono97/benchmark/SignPad_1.ozr";
+                    for (let i=1; i<count; i++) {
+                        p[`child${i}.connection.reportname`] = `user/kimhono97/benchmark/SignPad_${i%4+1}.ozr`;
+                    }
+                    break;
+                }
+                default: {
+                    p["connection.reportname"] = "ozr_eForm/SignPad_1.ozr";
+                    p["viewer.childcount"] = 1;
+                    p["child1.connection.reportname"] = "ozr_eForm/SignPad_2.ozr";
+                    p["export.saveonefile"] = true;
+                    break;
+                }
+            }
+            return p;
+        })();
+
+        const ozViewerOpt = {
+            "mstyle": (urlGetParamMap["mstyle"] || "false") != "false",
+            "save_exportfrom": (() => {
+                const exportfrom = urlGetParamMap["exportfrom"];
+                switch (exportfrom) {
+                    case "server":
+                    case "scheduler":
+                        return { "pdf": exportfrom };
+                }
+                return undefined;
+            })(),
+        };
+    </script>
+
+    <script type="text/javascript">
+        (() => {
+            const logFunc = console.log;
+            console.log = (...args) => {
+                logFunc("[VIEWER_PAGE]", ...args);
+            };
+        })();
+
+        function loadAllLibs() {
+            /**
+             * @param {"js"|"css"} type
+             * @param {string} url
+             */
+            function loadResource(type, url) {
+                return new Promise((resolve, reject) => {
+                    let element;
+
+                    switch (type) {
+                        case "js":
+                            element = document.createElement('script');
+                            element.src = url;
+                            element.async = false;
+                            break;
+                        case "css":
+                            element = document.createElement('link');
+                            element.rel = 'stylesheet';
+                            element.href = url;
+                            break;
+                        default:
+                            reject(new Error(`Invalid resource type: ${type}`));
+                            return;
+                    }
+
+                    element.onload = () => resolve(url);
+                    element.onerror = () => reject(new Error(`Load failed: ${url}`));
+                    document.head.appendChild(element);
+                });
+            }
+
+            const loadingLibs = libUrls.css.map(url => loadResource("css", url)).concat(libUrls.js.map(url => loadResource("js", url)));
+            return Promise.all(loadingLibs);
+        }
+
+        /**
+         * @param {string} base64
+         * @param {string} contentType
+         */
+        function makeBlobFromBase64(base64, contentType) {
+            const byteCharacters = atob(base64);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            return new Blob([byteArray], { type: contentType });
+        }
+
+        /**
+         * @param {"init"|"bind"|"export"|"finish"|"fail"} step
+         */
+        function postStopWatch(step, ref) {
+            console.log("Post StopWatch", { step, time: new Date() });
+            window.parent.postMessage({ type: "stopwatch", step, ref }, "*");
+        }
+
+        function OZUserActionCommand_OZViewer() {
+            // console.log("UA", arguments);
+        }
+
+
+        loadAllLibs().then(() => {
+            postStopWatch("init");
+
+            if (typeof PDFJS != "undefined") {
+                // cMapUrl must match the path of pdf.js file. If it is different from the default path, be sure to correct it.
+                PDFJS.cMapUrl = ozViewerPath + "pdf_js/web/cmaps/";
+                PDFJS.cMapPacked = true;
+            }
+
+            SetOZParamters_OZViewer = () => {
+                Object.keys(ozViewerParams).forEach(paramKey => {
+                    let paramValue = ozViewerParams[paramKey];
+                    if (typeof paramValue == "object") {
+                        paramValue = JSON.stringify(paramValue);
+                    } else {
+                        paramValue = "" + paramValue;
+                    }
+                    ozViewer.sendToActionScript(paramKey, paramValue);
+                });
+                return true;
+            };
+
+            return new Promise(resolve => {
+                const loading = [];
+                const loaded = [];
+                OZProgressCommand_OZViewer = (step, state, reportname) => {
+                    // console.log("PRG", { step, state, reportname });
+                    reportname = reportname.split(".")[0]; // reportname bug?
+                    const index = loading.indexOf(reportname);
+                    if (step == 4 && state == 2) {
+                        if (index >= 0) {
+                            loading.splice(index);
+                        }
+                        loaded.push(reportname);
+                        console.log("Report Loaded:", reportname);
+                        setTimeout(() => {
+                            if (loading.length == 0) {
+                                resolve(loaded.length);
+                            }
+                        });
+                        return;
+                    }
+
+                    if (index < 0) {
+                        loading.push(reportname);
+                    }
+                };
+
+                start_ozjs(ozViewerId, ozViewerPath, ozViewerOpt);
+            });
+        }).then(count => {
+            postStopWatch("bind", count);
+
+            return new Promise((resolve, reject) => {
+                OZExportMemoryStreamCallBack_OZViewer = jsonText => {
+                    console.log("EXPORT", jsonText.slice(0, 30), `... (len=${jsonText.length})`);
+                    resolve(jsonText);
+                };
+                ozViewer.Script("save_memorystream");
+                setTimeout(() => {
+                    reject(new Error("timeout 10s: save_memorystream"));
+                }, 10000);
+            });
+        }).then(result => {
+            postStopWatch("export", result);
+
+            if ((urlGetParamMap["download"] || "false") != "false") {
+                const obj = JSON.parse(result);
+                Object.keys(obj).forEach(k => {
+                    const blob = makeBlobFromBase64(obj[k], "application/pdf");
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.download = k.endsWith(".pdf") ? k : k + ".pdf";
+                    a.href = url;
+                    a.style.position = "absolute";
+                    a.style.opacity = "0";
+
+                    document.body.appendChild(a);
+                    a.click();
+                    setTimeout(() => {
+                        URL.revokeObjectURL(url);
+                        document.body.removeChild(a);
+                    }, 1000);
+                });
+            
+            }
+            
+        }).catch(e => {
+            postStopWatch("fail", e);
+            console.error(e);
+        }).finally(() => {
+            postStopWatch("finish");
+        });
+        
+    </script>
+</body>
+</html>

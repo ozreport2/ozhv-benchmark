@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>RVH Speed Benchmarker</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="control-panel">
+        <div class="input-group">
+            <button id="startBtn">전체 측정 시작</button>
+        </div>
+        
+        <div class="options-container">
+            <div class="option-item">
+                <label>SV URL</label>
+                <select id="svurl_select">
+                    <option value="https://dev-test.oz4cs.com/" selected>기본값</option>
+                    <option value="custom">직접 입력</option>
+                </select>
+                <input type="text" id="svurl_custom" placeholder="https://your.server/oz/server/" class="custom-input" disabled>
+            </div>
+            <div class="option-item">
+                <label>EXPORT FROM</label>
+                <select id="exportfrom_select">
+                    <option value="client" selected>클라이언트</option>
+                    <option value="server">서버</option>
+                    <option value="scheduler">스케줄러</option>
+                </select>
+            </div>
+            <div class="option-item">
+                <label>RVH URL</label>
+                <select id="rvurl_select">
+                    <option value="https://dev-test.oz4cs.com/oz/HTML5/" selected>기본값</option>
+                    <option value="custom">직접 입력</option>
+                </select>
+                <input type="text" id="rvurl_custom" placeholder="https://your.server/rvh/path/" class="custom-input" disabled>
+            </div>
+            <div class="option-item">
+                <label>UI STYLE</label>
+                <select id="mstyle_select">
+                    <option value="false" selected>PC</option>
+                    <option value="true">Mobile</option>
+                </select>
+            </div>
+        </div>
+    </header>
+
+    <main class="monitor-container">
+        <div class="log-panel">
+            <div class="monitor-header">HISTORY LOG</div>
+            <ul id="historyLog"></ul>
+        </div>
+        <div class="iframe-panel">
+            <div class="iframe-dashboard">
+                <div class="status-group">
+                    <div id="statusMsg">준비 완료</div>
+                    <div id="progressText">0 / 0 Test Cases</div>
+                    <div id="currentTestDisplay" style="font-size: 11px; color: #888;">-</div>
+                </div>
+                
+                <div class="stats-group">
+                    <div class="results-summary">
+                        <div class="metric-col">
+                            <small>Init AVG</small>
+                            <b id="avg_init">-</b>ms
+                            <br>
+                            <small>Init MAX</small>
+                            <b id="max_init">-</b>ms
+                            <br>
+                            <small>Init Last</small>
+                            <b id="last_init">-</b>ms
+                            <br>
+                        </div>
+                        <div class="metric-col divider">
+                            <small>Bind AVG</small>
+                            <b id="avg_bind">-</b>ms
+                            <br>
+                            <small>Bind MAX</small>
+                            <b id="max_bind">-</b>ms
+                            <br>
+                            <small>Bind Last</small>
+                            <b id="last_bind">-</b>ms
+                        </div>
+                        <div class="metric-col divider">
+                            <small>Export AVG</small>
+                            <b id="avg_export">-</b>ms
+                            <br>
+                            <small>Export MAX</small>
+                            <b id="max_export">-</b>ms
+                            <br>
+                            <small>Export Last</small>
+                            <b id="last_export">-</b>ms
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="monitor-header">LIVE MONITORING</div>
+            <iframe id="testTarget" src="about:blank"></iframe>
+        </div>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
