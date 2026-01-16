@@ -342,3 +342,35 @@ function updateSummary(testName) {
         }
     });
 }
+
+function loadViewerPaths(svurl) {
+    const sep = "$SEP_BENCHMARK$";
+    return fetch(`${svurl}oz/dev_test/dev_test_manager.jsp?directories=viewers&sep=${sep}`)
+    .then(res => res.text())
+    .then(text => {
+        const list = text.split(sep);
+        return list.map(name => {
+            const url = `${svurl}oz/viewers/${name}/`;
+            return { name, url };
+        });
+    });
+}
+
+loadViewerPaths("https://dev-test.oz4cs.com/")
+.then(items => {
+    /** @type {HTMLSelectElement|null} */
+    const elemSelect = document.getElementById("rvurl_select");
+    if (!elemSelect) {
+        return;
+    }
+
+    items.forEach(item => {
+        const elemOption = document.createElement("option");
+        elemOption.innerHTML = item.name;
+        elemOption.value = item.url;
+        elemSelect.appendChild(elemOption);
+    });
+})
+.catch(e => {
+    console.error("Failed to load RVH Paths from server", e);
+});
