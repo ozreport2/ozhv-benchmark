@@ -7,10 +7,17 @@ const testQueue = [
 ];
 const stepOrder = ["init", "bind", "export"];
 const optionNames = ["svurl", "rvurl", "exportfrom", "mstyle"];
+const resultColumnNames = ["Test Case", "Step", "Avg Time (ms)"];
 let currentTestIndex = 0;
 let currentIteration = 0;
 let tempResults = {};
 let startTime = 0;
+const lastExecInfo = {
+    date: "",
+    userAgent: "",
+    options: [],
+    data: [],
+};
 
 const MAX_ITERATIONS = 3;
 const iframe = document.getElementById('testTarget');
@@ -65,21 +72,23 @@ btnStart.addEventListener('click', () => {
     elemHistoryLog.innerHTML = '';
     btnStart.disabled = true;
     document.querySelectorAll(".option-item select").forEach(select => { select.disabled = true; });
+
+    lastExecInfo.date = (new Date()).toString();
+    lastExecInfo.userAgent = navigator.userAgent;
+    lastExecInfo.options = optionNames.map(optName => `${optName} = ${optionValues[optName]}`);
+    lastExecInfo.data.length = 0;
+
     addLog("Start", true);
-    addLog(`[Date]\n\n${(new Date()).toString()}`);
-    addLog(`[User Agent]\n\n${navigator.userAgent.split(") ").join(")\n")}`);
-    addLog(`[Options]\n\n${optionNames.map(optName => `${optName} = ${optionValues[optName]}`).join("\n\n")}`);
+    addLog(`[Date]\n\n${lastExecInfo.date}`);
+    addLog(`[User Agent]\n\n${lastExecInfo.userAgent.split(") ").join(")\n")}`);
+    addLog(`[Options]\n\n${lastExecInfo.options.join("\n\n")}`);
     
     startNextTest();
 });
 
 function startNextTest() {
     if (currentTestIndex >= testQueue.length) {
-        iframe.src = "";
-        elemStatusMsg.innerText = "전체 테스트 완료";
-        addLog(`Completed`, true);
-        btnStart.disabled = false;
-        document.querySelectorAll(".option-item select").forEach(select => { select.disabled = false; });
+        onFinish();
         return;
     }
 
@@ -94,17 +103,47 @@ function startNextTest() {
     runIteration();
 }
 
+function onFinish() {
+    iframe.src = "";
+    elemStatusMsg.innerText = "전체 테스트 완료";
+    addLog(`Completed`, true);
+    btnStart.disabled = false;
+    document.querySelectorAll(".option-item select").forEach(select => { select.disabled = false; });
+
+    const enc = new TextEncoder();
+    const dataJson = JSON.stringify(lastExecInfo, null, 4);
+    if (dataJson) {
+        addDownloadLinkLog("benchmark_result.json", new Blob([enc.encode(dataJson)], { type: "text/json;charset=utf-8" }));
+    }
+    const dataCsv = (() => {
+        const lines = [];
+        lines.push(["Date", lastExecInfo.date]);
+        lines.push(["User Agent", lastExecInfo.userAgent]);
+        lines.push(["Options", lastExecInfo.options.join("; ")]);
+        lines.push([""]);
+        lines.push(resultColumnNames);
+        lastExecInfo.data.forEach(item => {
+            lines.push(resultColumnNames.map(colName => item[colName] || ""));
+        });
+        return lines.map(line => line.join(",")).join("\r\n");
+    })();
+    if (dataCsv) {
+        addDownloadLinkLog("benchmark_result.csv", new Blob([enc.encode(dataCsv)], { type: "text/csv;charset=utf-8" }));
+    }
+}
+
 function runIteration() {
     currentIteration++;
+    const testName = testQueue[currentTestIndex];
     if (currentIteration > MAX_ITERATIONS) {
-        updateSummary();
+        updateSummary(testName);
         currentTestIndex++;
         setTimeout(startNextTest, 1000); // 1초 뒤 다음 URL로
         return;
     }
+
     elemStatusMsg.innerText = `${currentIteration}회차 측정 중...`;
     startTime = performance.now();
-    const testName = testQueue[currentTestIndex];
     const optionParams = (() => {
         const pairs = optionNames.map(optName => {
             const optValue = optionValues[optName];
@@ -145,7 +184,8 @@ window.addEventListener("message", event => {
         return;
     }
 
-    setTimeout(updateSummary);
+    const testName = testQueue[currentTestIndex];
+    setTimeout(() => updateSummary(testName));
     if (step == "finish") {
         setTimeout(runIteration, 500); // 다음 회차 진행
         return;
@@ -166,27 +206,11 @@ window.addEventListener("message", event => {
             case "export":
                 if (currentIteration >= MAX_ITERATIONS) {
                     try {
-                        const testName = testQueue[currentTestIndex];
                         const obj = JSON.parse(ref);
                         Object.keys(obj).forEach(k => {
                             const blob = makeBlobFromBase64(obj[k], "application/pdf");
                             const fileName = testName + "_" + (k.endsWith(".pdf") ? k : k + ".pdf");
-                            addLinkLog(fileName, ev => {
-                                const url = URL.createObjectURL(blob);
-                                const a = document.createElement("a");
-                                a.download = fileName;
-                                a.href = url;
-                                a.target = "_blank";
-                                a.style.position = "absolute";
-                                a.style.opacity = "0";
-
-                                document.body.appendChild(a);
-                                a.click();
-                                setTimeout(() => {
-                                    URL.revokeObjectURL(url);
-                                    document.body.removeChild(a);
-                                }, 1000);
-                            });
+                            addDownloadLinkLog(fileName, blob);
                         });
                     } catch (e) {
                         addErrorLog(e);
@@ -226,6 +250,25 @@ function addErrorLog(e) {
     appendHistoryLog(li);
 }
 
+function addDownloadLinkLog(fileName, blob) {
+    addLinkLog(fileName, ev => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.download = fileName;
+        a.href = url;
+        a.target = "_blank";
+        a.style.position = "absolute";
+        a.style.opacity = "0";
+
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+            URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        }, 1000);
+    });
+}
+
 function addLinkLog(caption, callback) {
     if (typeof callback != "function") {
         return;
@@ -243,7 +286,7 @@ function addLinkLog(caption, callback) {
     appendHistoryLog(li);
 }
 
-function updateSummary() {
+function updateSummary(testName) {
     const keys = Object.keys(tempResults);
     keys.sort((a, b) => {
         const orderA = stepOrder.indexOf(a);
@@ -281,6 +324,11 @@ function updateSummary() {
             displayAvg.innerText = avgTime;
             if (currentIteration > MAX_ITERATIONS) {
                 addLog(`AVG ${k}: ${avgTime}ms`);
+                const resultItem = {};
+                resultItem[resultColumnNames[0]] = testName;
+                resultItem[resultColumnNames[1]] = k;
+                resultItem[resultColumnNames[2]] = avgTime;
+                lastExecInfo.data.push(resultItem);
             }
         }
         if (displayMax) {
