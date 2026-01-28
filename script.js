@@ -108,6 +108,7 @@ const MAX_ITERATIONS = 3;
 /** @type {HTMLIFrameElement} */
 const iframe = document.getElementById('testTarget');
 const btnStart = document.getElementById('startBtn');
+const btnParamEdit = document.getElementById('settingsBtn');
 const elemHistoryLog = document.getElementById('historyLog');
 const elemStatusMsg = document.getElementById('statusMsg');
 
@@ -160,6 +161,7 @@ btnStart.addEventListener('click', () => {
     currentTestIndex = 0;
     elemHistoryLog.innerHTML = '';
     btnStart.disabled = true;
+    btnParamEdit.disabled = true;
     document.querySelectorAll(".option-item select").forEach(select => { select.disabled = true; });
 
     lastExecInfo.date = (new Date()).toString();
@@ -197,6 +199,7 @@ function onFinish() {
     elemStatusMsg.innerText = "전체 테스트 완료";
     addLog(`Completed`, true);
     btnStart.disabled = false;
+    btnParamEdit.disabled = false;
     document.querySelectorAll(".option-item select").forEach(select => { select.disabled = false; });
 
     const enc = new TextEncoder();
@@ -438,6 +441,170 @@ function updateSummary(testName) {
         }
     });
 }
+
+
+let editor = null;
+let editingQueue = [];
+let selectedEditIndex = 0;
+const modal = document.getElementById('settingsModal');
+
+function initMonacoEditor(initialValue) {
+    return new Promise((resolve) => {
+        require.config({ 
+            paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.43.0/min/vs' } 
+        });
+
+        require(['vs/editor/editor.main'], function() {
+            editor = monaco.editor.create(document.getElementById('monaco-editor'), {
+                value: initialValue,
+                language: 'ini',
+                theme: 'vs-dark',
+                automaticLayout: true,
+                fontSize: 16,
+                fontFamily: '"Cascadia Code", "Courier New", Consolas, monospace', // 폰트 종류 명시
+                wordWrap: "on",
+                renderWhitespace: "all",
+                mouseWheelZoom: true,
+                renderLineHighlightOnlyWhenFocus: true,
+            });
+            
+            editor.onDidChangeModelContent(() => {
+                if (editingQueue[selectedEditIndex]) {
+                    editingQueue[selectedEditIndex].paramText = editor.getValue();
+                }
+            });
+            resolve();
+        });
+    });
+}
+
+btnParamEdit.addEventListener("click", async () => {
+    editingQueue = JSON.parse(JSON.stringify(testQueue)); // 편집용 복사본 생성
+    modal.style.display = "block";
+
+    if (!editor) {
+        await initMonacoEditor(editingQueue[0].paramText);
+    }
+    selectEditItem(0); // 첫 번째 항목 선택 상태로 시작
+    renderModalList();
+});
+
+function renderModalList() {
+    const listContainer = document.getElementById('modalTestCaseList');
+    listContainer.innerHTML = '';
+    
+    editingQueue.forEach((item, index) => {
+        const div = document.createElement('div');
+        div.className = `editor-item ${index === selectedEditIndex ? 'active' : ''}`;
+        
+        // 삭제 버튼
+        const delBtn = document.createElement('button');
+        delBtn.innerHTML = '✕';
+        delBtn.className = 'btn-delete-item';
+        delBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            deleteItem(index);
+        });
+
+        // 이름 입력 인풋
+        const nameInput = document.createElement('input');
+        nameInput.value = item.name;
+        nameInput.placeholder = "항목 이름 입력...";
+        nameInput.addEventListener("input", (e) => {
+            editingQueue[index].name = e.target.value;
+        });
+        
+        // 인풋 클릭 시에도 부모의 onclick(항목 전환)이 발생하도록 하되, 
+        // 이미 선택된 상태라면 이벤트 전파를 막아 포커스를 유지합니다.
+        nameInput.addEventListener("click", (e) => {
+            if (index === selectedEditIndex) {
+                e.stopPropagation();
+            }
+        });
+
+        div.appendChild(document.createTextNode(`Case ${index + 1}`));
+        div.appendChild(delBtn);
+        div.appendChild(nameInput);
+        
+        // 항목 클릭 시 전환 로직
+        div.addEventListener("click", () => {
+            if (selectedEditIndex !== index) {
+                selectEditItem(index);
+            }
+        });
+        
+        listContainer.appendChild(div);
+    });
+}
+
+function selectEditItem(index) {
+    // 1. 인덱스 업데이트
+    selectedEditIndex = index;
+
+    // 2. UI 클래스 갱신 (리스트 내 모든 항목의 active 클래스 제거/추가)
+    const items = document.querySelectorAll('.editor-item');
+    items.forEach((el, i) => {
+        el.classList.toggle('active', i === index);
+    });
+
+    // 3. 에디터 내용 동기화
+    if (editor && editingQueue[index]) {
+        // setValue를 호출하면 커서 위치가 초기화되므로 값이 다를 때만 갱신
+        if (editor.getValue() !== editingQueue[index].paramText) {
+            editor.setValue(editingQueue[index].paramText);
+        }
+    }
+}
+
+function deleteItem(index) {
+    if (editingQueue.length <= 1) {
+        alert("최소 하나 이상의 테스트 케이스가 필요합니다.");
+        return;
+    }
+    editingQueue.splice(index, 1);
+    // 삭제 후 인덱스 보정
+    if (selectedEditIndex >= editingQueue.length) {
+        selectedEditIndex = editingQueue.length - 1;
+    }
+    renderModalList();
+    selectEditItem(selectedEditIndex);
+}
+
+document.getElementById('saveSettings').addEventListener("click", () => {
+    const filteredQueue = editingQueue.filter(item => {
+        const isNameEmpty = !item.name || item.name.trim() === "";
+        const isContentEmpty = !item.paramText || item.paramText.trim() === "";
+        return !isNameEmpty && !isContentEmpty;
+    });
+
+    if (filteredQueue.length === 0) {
+        alert("유효한 테스트 케이스가 없습니다. (이름과 내용을 모두 입력해주세요)");
+        return;
+    }
+    
+    testQueue.length = 0;
+    testQueue.push(...filteredQueue);
+    
+    modal.style.display = "none";
+    alert(`저장 완료! (총 ${testQueue.length}개 항목 반영)`);
+});
+
+document.getElementById('closeSettings').addEventListener("click", () => {
+    modal.style.display = "none";
+});
+
+document.getElementById('addTestCase').addEventListener("click", () => {
+    const newCase = {
+        name: "New Test Case",
+        paramText: "connection.servlet=MACRO_SVURL",
+        sep: "&"
+    };
+    editingQueue.push(newCase);
+    selectedEditIndex = editingQueue.length - 1; // 새로 만든 항목으로 바로 이동
+    renderModalList();
+    if (editor) editor.setValue(newCase.paramText);
+});
+
 
 function loadViewerPaths(svurl) {
     const sep = "$SEP_BENCHMARK$";

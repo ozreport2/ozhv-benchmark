@@ -3,12 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <title>RVH Speed Benchmarker</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cascadia+Code:ital,wght@0,200..700;1,200..700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.43.0/min/vs/loader.min.js"></script>
 </head>
 <body>
     <header class="control-panel">
         <div class="input-group">
             <button id="startBtn">전체 측정 시작</button>
+            <button id="settingsBtn" title="테스트 케이스 편집" style="background: #444; margin-left: 5px; padding: 10px 12px;">
+                ⚙️
+            </button>
         </div>
         
         <div class="options-container">
@@ -100,6 +108,30 @@
             <iframe id="testTarget" src="about:blank"></iframe>
         </div>
     </main>
+
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Test Case Editor</h3>
+                <div class="modal-actions">
+                    <button id="saveSettings" class="btn-save">확인 (저장)</button>
+                    <button id="closeSettings" class="btn-cancel">취소</button>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div class="test-case-list">
+                    <div class="list-header" style="padding: 10px; border-bottom: 1px solid #444; display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 12px; font-weight: bold; color: #00d4ff;">TEST CASES</span>
+                        <button id="addTestCase" title="항목 추가" style="background: #28a745; border: none; color: white; border-radius: 4px; cursor: pointer; padding: 2px 8px; font-size: 14px;">+</button>
+                    </div>
+                    <div id="modalTestCaseList"></div>
+                </div>
+                <div class="editor-container">
+                    <div id="monaco-editor"></div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script src="script.js"></script>
 </body>

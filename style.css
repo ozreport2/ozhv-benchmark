@@ -1,6 +1,10 @@
+/* ==========================================================================
+   1. Global Styles & Layout
+   ========================================================================== */
 * {
     box-sizing: border-box;
 }
+
 body {
     margin: 0;
     padding: 0;
@@ -13,6 +17,9 @@ body {
     overflow: hidden;
 }
 
+/* ==========================================================================
+   2. Header & Control Panel
+   ========================================================================== */
 .control-panel {
     background: #2d2d2d;
     padding: 15px 20px;
@@ -22,6 +29,11 @@ body {
     border-bottom: 1px solid #444;
 }
 
+.input-group {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
 
 .options-container {
     display: grid;
@@ -30,19 +42,23 @@ body {
     flex: 1;
     max-width: 750px;
 }
+
 .option-item {
     display: flex;
     align-items: center;
     gap: 8px;
     justify-content: flex-end;
 }
+
 .option-item label {
     font-size: 11px;
     color: #aaa;
     width: 80px;
     font-weight: bold;
 }
-.option-item select, .custom-input {
+
+.option-item select, 
+.custom-input {
     background: #3d3d3d;
     border: 1px solid #555;
     color: #fff;
@@ -50,33 +66,88 @@ body {
     border-radius: 4px;
     font-size: 12px;
 }
+
 .option-item select {
     width: 100px;
     min-width: 100px;
+    transition: width 0.2s;
 }
+
 .option-item select:focus {
     width: 250px;
 }
+
 .custom-input {
     width: 300px;
     min-width: 220px;
 }
+
 .custom-input:disabled {
     background: #2a2a2a;
     color: #888;
     border-color: #333;
 }
 
-#statusMsg {
-    font-size: 14px;
+/* ==========================================================================
+   3. Buttons
+   ========================================================================== */
+#startBtn, 
+#settingsBtn {
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
     font-weight: bold;
-}
-#progressText {
-    font-size: 11px;
-    color: #00d4ff;
-    margin-bottom: 2px;
+    transition: background 0.2s, opacity 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
+#startBtn {
+    background: #28a745;
+    color: white;
+    min-width: 80px;
+    padding: 10px 20px;
+    font-size: 13px;
+    height: 38px;
+}
+
+#startBtn:hover:not(:disabled) {
+    background: #218838;
+}
+
+#startBtn:active:not(:disabled) {
+    background: #1e7e34;
+}
+
+#startBtn:disabled {
+    background: #555;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+#settingsBtn {
+    background: #444;
+    color: #eee;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    margin-left: 8px;
+    font-size: 16px;
+}
+
+#settingsBtn:hover {
+    background: #555;
+    color: #fff;
+}
+
+#settingsBtn:active {
+    background: #333;
+}
+
+/* ==========================================================================
+   4. Dashboard & Monitoring
+   ========================================================================== */
 .iframe-dashboard {
     display: flex;
     justify-content: space-between;
@@ -87,24 +158,40 @@ body {
     margin-bottom: 10px;
     border: 1px solid #444;
 }
+
+#statusMsg {
+    font-size: 14px;
+    font-weight: bold;
+}
+
+#progressText {
+    font-size: 11px;
+    color: #00d4ff;
+    margin-bottom: 2px;
+}
+
 .results-summary {
     display: flex;
     gap: 15px;
 }
+
 .metric-col {
     font-size: 13px;
     line-height: 1.4;
 }
+
 .metric-col small {
     color: #888;
     font-size: 10px;
     display: inline-block;
     width: 60px;
 }
+
 .metric-col b {
     color: #00d4ff;
     margin-right: 5px;
 }
+
 .divider {
     border-left: 1px solid #444;
     padding-left: 15px;
@@ -115,6 +202,7 @@ body {
     display: flex;
     overflow: hidden;
 }
+
 .log-panel {
     width: 250px;
     border-right: 1px solid #333;
@@ -122,12 +210,14 @@ body {
     overflow-y: auto;
     padding: 10px;
 }
+
 .iframe-panel {
     flex: 1;
     display: flex;
     flex-direction: column;
     padding: 10px;
 }
+
 .monitor-header {
     font-size: 10px;
     color: #555;
@@ -142,27 +232,32 @@ body {
     margin: 0;
     font-size: 12px;
 }
+
 #historyLog li {
     padding: 8px;
     border-bottom: 1px solid #333;
     color: #ccc;
     font-family: monospace;
 }
+
 #historyLog li.active {
     background: #2d2d2d;
     border-left: 3px solid #007bff;
     color: #fff;
 }
+
 #historyLog li.error {
     background: #420000;
     border-left: 3px solid #ff0000;
     color: #ff9f9f;
 }
+
 #historyLog li a {
     color: #fff;
     cursor: pointer;
     text-decoration: underline;
 }
+
 #testTarget {
     width: 100%;
     height: 100%;
@@ -171,29 +266,140 @@ body {
     border-radius: 4px;
 }
 
-#startBtn {
+/* ==========================================================================
+   5. Modal & Editor
+   ========================================================================== */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.8);
+}
+
+.modal-content {
+    background-color: #2d2d2d;
+    margin: 5% auto;
+    padding: 0;
+    border: 1px solid #555;
+    width: 80%;
+    height: 85%;
+    display: flex;
+    flex-direction: column;
+    border-radius: 8px;
+}
+
+@media screen and (max-width: 768px) {
+    .modal-content {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        border-radius: 0;
+    }
+}
+
+.modal-header {
+    padding: 15px 20px;
+    border-bottom: 1px solid #444;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-body {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+.test-case-list {
+    width: 250px;
+    border-right: 1px solid #444;
+    overflow-y: auto;
+    background: #222;
+}
+
+.editor-item {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    padding: 10px;
+    border-bottom: 1px solid #333;
+    cursor: pointer;
+    font-size: 12px;
+    color: #aaa;
+}
+
+.editor-item.active {
+    background: #007bff;
+    color: #fff;
+}
+
+.btn-delete-item {
+    position: absolute;
+    right: 8px;
+    top: 8px;
+    background: #444; /* 배경색 */
+    border: 1px solid #666;
+    color: #ff4d4d;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: bold;
+    width: 24px;
+    height: 24px;
+    border-radius: 4px; /* 둥근 사각형 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    z-index: 5;
+}
+
+.btn-delete-item:hover {
+    background: #ff4d4d;
+    color: white;
+    border-color: #ff4d4d;
+}
+
+.editor-item input {
+    width: calc(100% - 30px);
+    background: #333;
+    border: 1px solid #555;
+    color: white;
+    padding: 4px;
+    margin-top: 5px;
+    font-size: 11px;
+    border-radius: 3px;
+}
+
+.editor-container {
+    flex: 1;
+    height: 100%;
+}
+
+#monaco-editor {
+    width: 100%;
+    height: 100%;
+}
+
+.btn-save {
     background: #28a745;
     color: white;
     border: none;
-    min-width: 80px;
-    padding: 10px 20px;
+    padding: 8px 15px;
     border-radius: 4px;
     cursor: pointer;
-    font-weight: bold;
-    font-size: 13px;
-    transition: background 0.2s;
 }
 
-#startBtn:hover {
-    background: #218838;
-}
-
-#startBtn:active {
-    background: #1e7e34;
-}
-
-#startBtn:disabled {
-    background: #555;
-    cursor: not-allowed;
-    opacity: 0.7;
+.btn-cancel {
+    background: #666;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-left: 5px;
 }
