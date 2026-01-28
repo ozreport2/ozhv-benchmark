@@ -13,6 +13,14 @@
         
         <div class="options-container">
             <div class="option-item">
+                <label>EXPORT FROM</label>
+                <select id="exportfrom_select">
+                    <option value="client" selected>클라이언트</option>
+                    <option value="server">서버</option>
+                    <option value="scheduler">스케줄러</option>
+                </select>
+            </div>
+            <div class="option-item">
                 <label>SV URL</label>
                 <select id="svurl_select">
                     <option value="https://dev-test.oz4cs.com/" selected>기본값</option>
@@ -21,11 +29,10 @@
                 <input type="text" id="svurl_custom" placeholder="https://your.server/oz/server/" class="custom-input" disabled>
             </div>
             <div class="option-item">
-                <label>EXPORT FROM</label>
-                <select id="exportfrom_select">
-                    <option value="client" selected>클라이언트</option>
-                    <option value="server">서버</option>
-                    <option value="scheduler">스케줄러</option>
+                <label>UI STYLE</label>
+                <select id="mstyle_select">
+                    <option value="false" selected>PC</option>
+                    <option value="true">Mobile</option>
                 </select>
             </div>
             <div class="option-item">
@@ -35,13 +42,6 @@
                     <option value="custom">직접 입력</option>
                 </select>
                 <input type="text" id="rvurl_custom" placeholder="https://your.server/rvh/path/" class="custom-input" disabled>
-            </div>
-            <div class="option-item">
-                <label>UI STYLE</label>
-                <select id="mstyle_select">
-                    <option value="false" selected>PC</option>
-                    <option value="true">Mobile</option>
-                </select>
             </div>
         </div>
     </header>

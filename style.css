@@ -7,7 +7,6 @@ body {
     font-family: 'Segoe UI', sans-serif;
     background: #1a1a1a;
     color: #eee;
-    height: 90vh; /* old browser fallback */
     height: 100dvh;
     display: flex;
     flex-direction: column;
@@ -23,76 +22,89 @@ body {
     border-bottom: 1px solid #444;
 }
 
-#urlList {
+
+.options-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px 20px;
+    flex: 1;
+    max-width: 750px;
+}
+.option-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: flex-end;
+}
+.option-item label {
+    font-size: 11px;
+    color: #aaa;
+    width: 80px;
+    font-weight: bold;
+}
+.option-item select, .custom-input {
     background: #3d3d3d;
     border: 1px solid #555;
     color: #fff;
-    padding: 8px;
+    padding: 4px;
     border-radius: 4px;
-    width: 350px;
-    height: 60px;
-    resize: none;
     font-size: 12px;
 }
-
-.input-group {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
+.option-item select {
+    width: 100px;
+    min-width: 100px;
 }
-.input-group button {
-    background: #28a745;
-    color: white;
-    border: none;
-    padding: 10px;
-    border-radius: 4px;
-    cursor: pointer;
+.option-item select:focus {
+    width: 250px;
+}
+.custom-input {
+    width: 300px;
+    min-width: 220px;
+}
+.custom-input:disabled {
+    background: #2a2a2a;
+    color: #888;
+    border-color: #333;
+}
+
+#statusMsg {
+    font-size: 14px;
     font-weight: bold;
-    white-space: nowrap;
-}
-.input-group button:disabled {
-    opacity: 0.5;
-}
-
-.status-group {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-}
-.stats-group {
-    flex: 1;
-    display: flex;
-    flex-direction: row;
-    justify-content: flex-end;
 }
 #progressText {
     font-size: 11px;
     color: #00d4ff;
-    margin-bottom: 5px;
+    margin-bottom: 2px;
+}
+
+.iframe-dashboard {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #222;
+    padding: 10px 15px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    border: 1px solid #444;
 }
 .results-summary {
     display: flex;
     gap: 15px;
-    background: #222;
-    margin: 0;
-    padding: 5px 12px;
-    border-radius: 8px;
-    border: 1px solid #444;
 }
 .metric-col {
     font-size: 13px;
+    line-height: 1.4;
 }
 .metric-col small {
-    display: block;
     color: #888;
     font-size: 10px;
+    display: inline-block;
+    width: 60px;
 }
 .metric-col b {
     color: #00d4ff;
     margin-right: 5px;
 }
-
 .divider {
     border-left: 1px solid #444;
     padding-left: 15px;
@@ -121,6 +133,7 @@ body {
     color: #555;
     margin-bottom: 5px;
     font-weight: bold;
+    letter-spacing: 1px;
 }
 
 #historyLog {
@@ -158,61 +171,29 @@ body {
     border-radius: 4px;
 }
 
-.options-container {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr); /* 2열로 배치 */
-    gap: 10px 20px;
-    flex: 1;
-    max-width: 600px;
-}
-
-.option-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-.option-item label {
-    font-size: 11px;
-    color: #aaa;
-    width: 60px;
+#startBtn {
+    background: #28a745;
+    color: white;
+    border: none;
+    min-width: 80px;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
     font-weight: bold;
-}
-.option-item select {
-    background: #3d3d3d;
-    border: 1px solid #555;
-    color: #fff;
-    padding: 4px;
-    border-radius: 4px;
-    font-size: 12px;
-    min-width: 100px;
-    width: 100px;
+    font-size: 13px;
+    transition: background 0.2s;
 }
 
-.custom-input {
-    background: #444;
-    border: 1px solid #666;
-    color: #80ffea;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    width: 240px;
+#startBtn:hover {
+    background: #218838;
 }
 
-.iframe-dashboard {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: #222;
-    padding: 10px;
-    border-radius: 8px;
-    margin-bottom: 10px;
-    border: 1px solid #333;
+#startBtn:active {
+    background: #1e7e34;
 }
-.iframe-dashboard .status-group {
-    flex-shrink: 0;
-}
-.iframe-dashboard .stats-group {
-    display: flex;
-    gap: 10px;
-    justify-content: flex-end;
+
+#startBtn:disabled {
+    background: #555;
+    cursor: not-allowed;
+    opacity: 0.7;
 }

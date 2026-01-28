@@ -1,10 +1,95 @@
+/** 
+ * @typedef {{
+ *      name: string;
+ *      paramText: string;
+ *      sep: string;
+ * }} TestCase
+ **/
 
+/** @type {TestCase[]} */
 const testQueue = [
     "Dataset_0100", "Dataset_0500", "Dataset_1000",
     "PDFDoc_2", "PDFDoc_3", "PDFDoc_6", // "PDFDoc_20",
     "OZD_01", "OZD_10", "OZD_20",
     "MultiDoc_02", "MultiDoc_10", "MultiDoc_20"
-];
+].map(name => {
+    const p = ["connection.servlet=MACRO_SVURL"];
+    const [testClass, scaleName] = name.split("_");
+    switch (testClass) {
+        case "Dataset": {
+            p.push("connection.reportname=user/kimhono97/benchmark/csv.ozr");
+            switch (parseInt(scaleName)) {
+                case 100:
+                default:
+                    break;
+                case 500:
+                    p.push("connection.pcount=1");
+                    p.push("connection.args1=dataset=Google_585K");
+                    break;
+                case 1000:
+                    p.push("connection.pcount=1");
+                    p.push("connection.args1=dataset=AMD_955K");
+                    break;
+            }
+            break;
+        }
+        case "PDFDoc": {
+            switch (parseInt(scaleName)) {
+                case 2:
+                    p.push("connection.reportname=user/kimhono97/benchmark/TS_2M.pdf");
+                default:
+                    break;
+                case 3:
+                    p.push("connection.reportname=user/kimhono97/benchmark/CSS_3M.pdf");
+                    break;
+                case 6:
+                    p.push("connection.reportname=user/kimhono97/benchmark/JS_6M.pdf");
+                    break;
+                case 20:
+                    p.push("connection.reportname=user/kimhono97/benchmark/PDF_21M.pdf");
+                    break;
+            }
+            break;
+        }
+        case "OZD": {
+            switch (parseInt(scaleName)) {
+                case 1:
+                    p.push("connection.openfile=ozp://user/kimhono97/benchmark/ASalesReport.ozd");
+                default:
+                    break;
+                case 10:
+                    p.push("connection.openfile=ozp://user/kimhono97/benchmark/Image_14M.ozd");
+                    break;
+                case 20:
+                    p.push("connection.openfile=ozp://user/kimhono97/benchmark/Image_24M.ozd");
+                    break;
+            }
+            break;
+        }
+        case "MultiDoc": {
+            const count = parseInt(scaleName) || 2;
+            p.push("global.inheritparameter=true");
+            p.push("export.saveonefile=true");
+            p.push(`viewer.childcount=${count - 1}`);
+            p.push("connection.reportname=user/kimhono97/benchmark/SignPad_1.ozr");
+            for (let i=1; i<count; i++) {
+                p.push(`child${i}.connection.reportname=user/kimhono97/benchmark/SignPad_${i%4+1}.ozr`);
+            }
+            break;
+        }
+        default:
+            break;
+    }
+
+    const sep = "\n"
+    const paramText = p.join(sep);
+    return {
+        name,
+        paramText,
+        sep,
+    };
+});
+
 const stepOrder = ["init", "bind", "export"];
 const optionNames = ["svurl", "rvurl", "exportfrom", "mstyle"];
 const resultColumnNames = ["Test Case", "Step", "Avg Time (ms)"];
@@ -20,6 +105,7 @@ const lastExecInfo = {
 };
 
 const MAX_ITERATIONS = 3;
+/** @type {HTMLIFrameElement} */
 const iframe = document.getElementById('testTarget');
 const btnStart = document.getElementById('startBtn');
 const elemHistoryLog = document.getElementById('historyLog');
@@ -50,7 +136,10 @@ const optionValues = (() => {
             }
         };
         onSelectChange();
-        elemSelect.addEventListener("change", ev => onSelectChange());
+        elemSelect.addEventListener("change", ev => {
+            onSelectChange();
+            elemSelect.blur();
+        });
         if (elemCustom) {
             elemCustom.addEventListener("blur", ev => {
                 const selectedOption = elemSelect.selectedOptions[0];
@@ -95,7 +184,7 @@ function startNextTest() {
     currentIteration = 0;
     tempResults = { init: [], bind: [], export: [] };
     
-    const testName = testQueue[currentTestIndex];
+    const testName = testQueue[currentTestIndex].name;
     document.getElementById('currentTestDisplay').innerText = testName;
     document.getElementById('progressText').innerText = `${currentTestIndex + 1} / ${testQueue.length} Test Cases`;
     
@@ -134,7 +223,7 @@ function onFinish() {
 
 function runIteration() {
     currentIteration++;
-    const testName = testQueue[currentTestIndex];
+    const testName = testQueue[currentTestIndex].name;
     if (currentIteration > MAX_ITERATIONS) {
         updateSummary(testName);
         currentTestIndex++;
@@ -157,7 +246,7 @@ function runIteration() {
         }
         return "&" + pairs.join("&");
     })();
-    iframe.src = `./rvh/?target=${testName}&t=${Date.now()}` + optionParams;
+    iframe.src = `./rvh/?t=${Date.now()}` + optionParams;
 }
 
 /**
@@ -184,8 +273,8 @@ window.addEventListener("message", event => {
         return;
     }
 
-    const testName = testQueue[currentTestIndex];
-    setTimeout(() => updateSummary(testName));
+    const testItem = testQueue[currentTestIndex];
+    setTimeout(() => updateSummary(testItem.name));
     if (step == "finish") {
         setTimeout(runIteration, 500); // 다음 회차 진행
         return;
@@ -201,26 +290,33 @@ window.addEventListener("message", event => {
         duration,
     });
 
-    if (ref) {
+    try {
         switch (step) {
+            case "ready":
+                iframe.contentWindow.postMessage({
+                    type: "parameters",
+                    paramText: testItem.paramText,
+                    sep: testItem.sep,
+                }, "*");
+                break;
             case "export":
-                if (currentIteration >= MAX_ITERATIONS) {
-                    try {
-                        const obj = JSON.parse(ref);
-                        Object.keys(obj).forEach(k => {
-                            const blob = makeBlobFromBase64(obj[k], "application/pdf");
-                            const fileName = testName + "_" + (k.endsWith(".pdf") ? k : k + ".pdf");
-                            addDownloadLinkLog(fileName, blob);
-                        });
-                    } catch (e) {
-                        addErrorLog(e);
-                    }
+                if (ref && currentIteration >= MAX_ITERATIONS) {
+                    const obj = JSON.parse(ref);
+                    Object.keys(obj).forEach(k => {
+                        const blob = makeBlobFromBase64(obj[k], "application/pdf");
+                        const fileName = testItem.name + "_" + (k.endsWith(".pdf") ? k : k + ".pdf");
+                        addDownloadLinkLog(fileName, blob);
+                    });
                 }
                 break;
             case "error":
-                addErrorLog(ref);
+                if (ref) {
+                    addErrorLog(ref);
+                }
                 break;
         }
+    } catch (e) {
+        addErrorLog(e);
     }
     
 });
