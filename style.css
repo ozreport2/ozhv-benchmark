@@ -313,13 +313,18 @@ body {
     display: flex;
     flex: 1;
     overflow: hidden;
+    flex-direction: row; /* 기본 가로 배치 */
 }
 
 .test-case-list {
     width: 250px;
     border-right: 1px solid #444;
+    border-bottom: none;
     overflow-y: auto;
     background: #222;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0; /* 너비 고정 */
 }
 
 .editor-item {
@@ -378,6 +383,7 @@ body {
 .editor-container {
     flex: 1;
     height: 100%;
+    min-height: 0;
 }
 
 #monaco-editor {
@@ -402,4 +408,66 @@ body {
     border-radius: 4px;
     cursor: pointer;
     margin-left: 5px;
+}
+
+/* --------------------------------------------------------------------------
+   6. Media Queries (모바일/좁은 화면 대응)
+   -------------------------------------------------------------------------- */
+
+@media screen and (max-width: 900px) {
+    /* 전체 모달 크기 조정 */
+    .modal-content {
+        width: 95%;
+        height: 95%;
+        margin: 2.5% auto;
+    }
+
+    /* 상하 배치로 전환 */
+    .modal-body {
+        flex-direction: column; 
+    }
+
+    /* 리스트 영역을 상단으로, 높이 제한 */
+    .test-case-list {
+        width: 100%;
+        height: 200px; /* 리스트 높이 고정 */
+        border-right: none;
+        border-bottom: 1px solid #444;
+    }
+
+    #modalTestCaseList {
+        display: flex;
+        overflow-x: auto;
+        flex-grow: 1;
+    }
+
+    .editor-item {
+        min-width: 150px;
+        border-bottom: none;
+        border-right: 1px solid #333;
+    }
+
+    /* 에디터가 남은 공간을 차지 */
+    .editor-container {
+        flex: 1;
+    }
+
+    /* 상단 옵션 패널 레이아웃 조정 */
+    .control-panel {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    .options-container {
+        grid-template-columns: 1fr;
+        max-width: 100%;
+    }
+    .option-item {
+        justify-content: flex-start;
+    }
+
+    .iframe-dashboard {
+        flex-direction: column;
+        align-items: flex-start;
+    }
 }
