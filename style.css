@@ -410,6 +410,17 @@ body {
     margin-left: 5px;
 }
 
+.git-line-added {
+    background: #28a745;
+    width: 3px !important;
+    margin-left: 3px;
+}
+.git-line-modified {
+    background: #007bff;
+    width: 3px !important;
+    margin-left: 3px;
+}
+
 /* --------------------------------------------------------------------------
    6. Media Queries (모바일/좁은 화면 대응)
    -------------------------------------------------------------------------- */

@@ -518,11 +518,16 @@ let editor = null;
 const editingQueue = [];
 let selectedEditIndex = 0;
 const modal = document.getElementById('settingsModal');
+let decorationIds = [];
 
-function initMonacoEditor(initialValue) {
+async function initMonacoEditor(initialValue) {
+    await document.fonts.ready;
     return new Promise((resolve) => {
         require.config({ 
-            paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.43.0/min/vs' } 
+            paths: {
+                // 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.43.0/min/vs',
+                'vs': `lib/monaco-editor/0.55.1/min/vs`,
+            }
         });
 
         require(['vs/editor/editor.main'], function() {
@@ -537,16 +542,48 @@ function initMonacoEditor(initialValue) {
                 renderWhitespace: "all",
                 mouseWheelZoom: true,
                 renderLineHighlightOnlyWhenFocus: true,
+                glyphMargin: true,
             });
             
             editor.onDidChangeModelContent(() => {
                 if (editingQueue[selectedEditIndex]) {
                     editingQueue[selectedEditIndex].paramText = editor.getValue();
                 }
+                updateGitGutter();
             });
-            setTimeout(() => resolve(), 500);
+
+            resolve();
         });
     });
+}
+
+function updateGitGutter() {
+    const original = testQueue[selectedEditIndex].paramText.split('\n');
+    const modified = editor.getValue().split('\n');
+    
+    let newDecorations = [];
+
+    // 간단한 비교 로직 (더 정확한 비교를 위해 diff 라이브러리를 쓸 수도 있음)
+    modified.forEach((line, index) => {
+        const lineNum = index + 1;
+        
+        if (!original[index]) {
+            // 원본보다 줄이 많아짐 (추가)
+            newDecorations.push({
+                range: new monaco.Range(lineNum, 1, lineNum, 1),
+                options: { isWholeLine: true, linesDecorationsClassName: 'git-line-added' }
+            });
+        } else if (original[index] !== line) {
+            // 내용이 다름 (변경)
+            newDecorations.push({
+                range: new monaco.Range(lineNum, 1, lineNum, 1),
+                options: { isWholeLine: true, linesDecorationsClassName: 'git-line-modified' }
+            });
+        }
+    });
+
+    // 기존에 그려진 데코레이션 삭제하고 새로 그림
+    decorationIds = editor.deltaDecorations(decorationIds, newDecorations);
 }
 
 btnParamEdit.addEventListener("click", async () => {
@@ -557,6 +594,7 @@ btnParamEdit.addEventListener("click", async () => {
     if (!editor) {
         await initMonacoEditor(editingQueue[0].paramText);
     }
+
     selectEditItem(0); // 첫 번째 항목 선택 상태로 시작
     renderModalList();
 });
