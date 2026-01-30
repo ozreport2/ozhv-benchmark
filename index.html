@@ -3,10 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <title>RVH Speed Benchmarker</title>
+    
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="icon" type="image/png" href="favicon.png">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cascadia+Code:ital,wght@0,200..700;1,200..700&display=swap" rel="stylesheet">
+    
     <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.43.0/min/vs/loader.min.js"></script>
 </head>
@@ -114,7 +118,11 @@
             <div class="modal-header">
                 <h3>Test Case Editor</h3>
                 <div class="modal-actions">
-                    <button id="saveSettings" class="btn-save">확인 (저장)</button>
+                    <button id="uploadSettings" class="btn-save">업로드</button>
+                    <button id="refreshSettings" class="btn-cancel">재로드</button>
+                </div>
+                <div class="modal-actions">
+                    <button id="saveSettings" class="btn-save">확인</button>
                     <button id="closeSettings" class="btn-cancel">취소</button>
                 </div>
             </div>

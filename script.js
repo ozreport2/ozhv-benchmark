@@ -6,89 +6,160 @@
  * }} TestCase
  **/
 
+const _g = new URLSearchParams(window.location.search);
+const userName = _g.get("u") || "default";
+
 /** @type {TestCase[]} */
-const testQueue = [
-    "Dataset_0100", "Dataset_0500", "Dataset_1000",
-    "PDFDoc_2", "PDFDoc_3", "PDFDoc_6", // "PDFDoc_20",
-    "OZD_01", "OZD_10", "OZD_20",
-    "MultiDoc_02", "MultiDoc_10", "MultiDoc_20"
-].map(name => {
-    const p = ["connection.servlet=MACRO_SVURL"];
-    const [testClass, scaleName] = name.split("_");
-    switch (testClass) {
-        case "Dataset": {
-            p.push("connection.reportname=user/kimhono97/benchmark/csv.ozr");
-            switch (parseInt(scaleName)) {
-                case 100:
-                default:
-                    break;
-                case 500:
-                    p.push("connection.pcount=1");
-                    p.push("connection.args1=dataset=Google_585K");
-                    break;
-                case 1000:
-                    p.push("connection.pcount=1");
-                    p.push("connection.args1=dataset=AMD_955K");
-                    break;
+const testQueue = [];
+
+loadTestData().then(list => {
+    testQueue.push(...list);
+});
+
+/**
+ * @returns {Promise<TestCase[]>}
+ */
+async function loadTestData() {
+    try {
+        const response = await fetch(`./api/list.jsp?user=${userName}`);
+        const result = await response.json();
+        if (Array.isArray(result)) {
+            const filtered = result.filter(item => {
+                return item
+                    && typeof item.name == "string" && item.name
+                    && typeof item.paramText == "string" && item.paramText
+                    && typeof item.sep == "string" && item.sep
+            }).map(item => {
+                const { name, paramText, sep } = item;
+                return { name, paramText, sep };
+            });
+            if (filtered.length > 0) {
+                return filtered;
             }
-            break;
         }
-        case "PDFDoc": {
-            switch (parseInt(scaleName)) {
-                case 2:
-                    p.push("connection.reportname=user/kimhono97/benchmark/TS_2M.pdf");
-                default:
-                    break;
-                case 3:
-                    p.push("connection.reportname=user/kimhono97/benchmark/CSS_3M.pdf");
-                    break;
-                case 6:
-                    p.push("connection.reportname=user/kimhono97/benchmark/JS_6M.pdf");
-                    break;
-                case 20:
-                    p.push("connection.reportname=user/kimhono97/benchmark/PDF_21M.pdf");
-                    break;
-            }
-            break;
-        }
-        case "OZD": {
-            switch (parseInt(scaleName)) {
-                case 1:
-                    p.push("connection.openfile=ozp://user/kimhono97/benchmark/ASalesReport.ozd");
-                default:
-                    break;
-                case 10:
-                    p.push("connection.openfile=ozp://user/kimhono97/benchmark/Image_14M.ozd");
-                    break;
-                case 20:
-                    p.push("connection.openfile=ozp://user/kimhono97/benchmark/Image_24M.ozd");
-                    break;
-            }
-            break;
-        }
-        case "MultiDoc": {
-            const count = parseInt(scaleName) || 2;
-            p.push("global.inheritparameter=true");
-            p.push("export.saveonefile=true");
-            p.push(`viewer.childcount=${count - 1}`);
-            p.push("connection.reportname=user/kimhono97/benchmark/SignPad_1.ozr");
-            for (let i=1; i<count; i++) {
-                p.push(`child${i}.connection.reportname=user/kimhono97/benchmark/SignPad_${i%4+1}.ozr`);
-            }
-            break;
-        }
-        default:
-            break;
+    } catch (error) {
+        console.error('네트워크 에러:', error);
     }
 
-    const sep = "\n"
-    const paramText = p.join(sep);
+    return [
+        "Dataset_0100", "Dataset_0500", "Dataset_1000",
+        "PDFDoc_2", "PDFDoc_3", "PDFDoc_6", // "PDFDoc_20",
+        "OZD_01", "OZD_10", "OZD_20",
+        "MultiDoc_02", "MultiDoc_10", "MultiDoc_20"
+    ].map(name => {
+        const p = ["connection.servlet=MACRO_SVURL"];
+        const [testClass, scaleName] = name.split("_");
+        switch (testClass) {
+            case "Dataset": {
+                p.push("connection.reportname=user/kimhono97/benchmark/csv.ozr");
+                switch (parseInt(scaleName)) {
+                    case 100:
+                    default:
+                        break;
+                    case 500:
+                        p.push("connection.pcount=1");
+                        p.push("connection.args1=dataset=Google_585K");
+                        break;
+                    case 1000:
+                        p.push("connection.pcount=1");
+                        p.push("connection.args1=dataset=AMD_955K");
+                        break;
+                }
+                break;
+            }
+            case "PDFDoc": {
+                switch (parseInt(scaleName)) {
+                    case 2:
+                    default:
+                        p.push("connection.reportname=user/kimhono97/benchmark/TS_2M.pdf");
+                        break;
+                    case 3:
+                        p.push("connection.reportname=user/kimhono97/benchmark/CSS_3M.pdf");
+                        break;
+                    case 6:
+                        p.push("connection.reportname=user/kimhono97/benchmark/JS_6M.pdf");
+                        break;
+                    case 20:
+                        p.push("connection.reportname=user/kimhono97/benchmark/PDF_21M.pdf");
+                        break;
+                }
+                break;
+            }
+            case "OZD": {
+                switch (parseInt(scaleName)) {
+                    case 1:
+                    default:
+                        p.push("connection.openfile=ozp://user/kimhono97/benchmark/ASalesReport.ozd");
+                        break;
+                    case 10:
+                        p.push("connection.openfile=ozp://user/kimhono97/benchmark/Image_14M.ozd");
+                        break;
+                    case 20:
+                        p.push("connection.openfile=ozp://user/kimhono97/benchmark/Image_24M.ozd");
+                        break;
+                }
+                break;
+            }
+            case "MultiDoc": {
+                const count = parseInt(scaleName) || 2;
+                p.push("global.inheritparameter=true");
+                p.push("export.saveonefile=true");
+                p.push(`viewer.childcount=${count - 1}`);
+                p.push("connection.reportname=user/kimhono97/benchmark/SignPad_1.ozr");
+                for (let i=1; i<count; i++) {
+                    p.push(`child${i}.connection.reportname=user/kimhono97/benchmark/SignPad_${i%4+1}.ozr`);
+                }
+                break;
+            }
+            default:
+                break;
+        }
+
+        const sep = "\n"
+        const paramText = p.join(sep);
+        return {
+            name,
+            paramText,
+            sep,
+        };
+    });
+}
+
+/**
+ * 
+ * @param {TestCase[]} jsonData 
+ * @returns {Promise<{
+ *      success: boolean;
+ *      message: string;
+ * }>}
+ */
+async function updateTestData(jsonData) {
+    let errMsg = "";
+    try {
+        const response = await fetch("./api/update.jsp", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                user: userName,
+                data: jsonData,
+            })
+        });
+
+        const { success, message } = await response.json();
+        if (typeof success == "boolean" && typeof message == "string") {
+            return { success, message };
+        }
+    } catch (error) {
+        console.error('네트워크 에러:', error);
+        errMsg = error.toString();
+    }
     return {
-        name,
-        paramText,
-        sep,
+        success: false,
+        message: errMsg,
     };
-});
+}
 
 const stepOrder = ["init", "bind", "export"];
 const optionNames = ["svurl", "rvurl", "exportfrom", "mstyle"];
@@ -444,7 +515,7 @@ function updateSummary(testName) {
 
 
 let editor = null;
-let editingQueue = [];
+const editingQueue = [];
 let selectedEditIndex = 0;
 const modal = document.getElementById('settingsModal');
 
@@ -473,13 +544,14 @@ function initMonacoEditor(initialValue) {
                     editingQueue[selectedEditIndex].paramText = editor.getValue();
                 }
             });
-            resolve();
+            setTimeout(() => resolve(), 500);
         });
     });
 }
 
 btnParamEdit.addEventListener("click", async () => {
-    editingQueue = JSON.parse(JSON.stringify(testQueue)); // 편집용 복사본 생성
+    editingQueue.length = 0;
+    editingQueue.push(... JSON.parse(JSON.stringify(testQueue))); // 편집용 복사본 생성
     modal.style.display = "block";
 
     if (!editor) {
@@ -570,13 +642,16 @@ function deleteItem(index) {
     selectEditItem(selectedEditIndex);
 }
 
-document.getElementById('saveSettings').addEventListener("click", () => {
-    const filteredQueue = editingQueue.filter(item => {
+function getFilteredEditingQueue() {
+    return editingQueue.filter(item => {
         const isNameEmpty = !item.name || item.name.trim() === "";
         const isContentEmpty = !item.paramText || item.paramText.trim() === "";
         return !isNameEmpty && !isContentEmpty;
     });
+}
 
+document.getElementById('saveSettings').addEventListener("click", () => {
+    const filteredQueue = getFilteredEditingQueue();
     if (filteredQueue.length === 0) {
         alert("유효한 테스트 케이스가 없습니다. (이름과 내용을 모두 입력해주세요)");
         return;
@@ -591,6 +666,41 @@ document.getElementById('saveSettings').addEventListener("click", () => {
 
 document.getElementById('closeSettings').addEventListener("click", () => {
     modal.style.display = "none";
+});
+
+document.getElementById('refreshSettings').addEventListener("click", async () => {
+    const list = await loadTestData();
+    editingQueue.length = 0;
+    editingQueue.push(...list);
+    selectEditItem(0);
+    renderModalList();
+});
+
+document.getElementById('uploadSettings').addEventListener("click", async () => {
+    const filteredQueue = getFilteredEditingQueue();
+    if (filteredQueue.length === 0) {
+        alert("유효한 테스트 케이스가 없습니다. (이름과 내용을 모두 입력해주세요)");
+        return;
+    }
+    const list = await loadTestData();
+    if (JSON.stringify(filteredQueue) == JSON.stringify(list)) {
+        alert("변경사항이 없습니다.");
+        return;
+    }
+
+    const result = await updateTestData(filteredQueue);
+    if (!result.success) {
+        console.error('업데이트 실패:', result.message);
+        alert('실패: ' + result.message);
+        return;
+    }
+
+    console.log('업데이트 성공:', result.message);
+    alert('성공: ' + result.message);
+    editingQueue.length = 0;
+    editingQueue.push(...filteredQueue);
+    selectEditItem(0);
+    renderModalList();
 });
 
 document.getElementById('addTestCase').addEventListener("click", () => {
