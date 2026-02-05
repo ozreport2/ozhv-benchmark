@@ -546,8 +546,10 @@ async function initMonacoEditor(initialValue) {
             });
             
             editor.onDidChangeModelContent(() => {
-                if (editingQueue[selectedEditIndex]) {
-                    editingQueue[selectedEditIndex].paramText = editor.getValue();
+                const selectedItem = editingQueue[selectedEditIndex];
+                if (selectedItem) {
+                    selectedItem.paramText = editor.getValue();
+                    selectedItem.sep = editor.getModel().getEOL();
                 }
                 updateGitGutter();
             });
@@ -745,12 +747,14 @@ document.getElementById('addTestCase').addEventListener("click", () => {
     const newCase = {
         name: "New Test Case",
         paramText: "connection.servlet=MACRO_SVURL",
-        sep: "&"
+        sep: "\n",
     };
     editingQueue.push(newCase);
     selectedEditIndex = editingQueue.length - 1; // 새로 만든 항목으로 바로 이동
     renderModalList();
-    if (editor) editor.setValue(newCase.paramText);
+    if (editor) {
+        editor.setValue(newCase.paramText);
+    }
 });
 
 
